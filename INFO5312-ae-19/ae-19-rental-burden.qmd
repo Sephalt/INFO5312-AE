@@ -1,0 +1,63 @@
+---
+title: "AE 19: Increase in cost-burdened households in the United States"
+categories: 
+  - Application exercise
+execute: 
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: packages
+
+library(tidyverse)
+library(plotly)
+library(scales)
+library(colorspace)
+library(ggrepel)
+
+theme_set(theme_minimal())
+```
+
+We have already seen this semester that the cost of housing in the United States has been rising for several decades. A household is considered **cost-burdened** if they spend more than 30% of their income on housing costs.
+
+In this application exercise we will explore trends in the percentage of cost-burdened rental households in the 10 largest metropolitan statistical areas (MSAs).^[Based on population as of 2023.] The relevant data can be found in `data/msa-renters-burden.csv`.
+
+```{r}
+#| label: import-data
+
+renter_burden <- read_csv(file = "data/msa-renters-burden.csv")
+renter_burden
+```
+
+`pct_burdened` reports the percentage of renter-occupied housing units that spend 30%+ of their household income on gross rent.^[Specifically [Table B25070 from the American Community Survey](https://data.census.gov/table/ACSDT1Y2023.B25070?q=B25070:+Gross+Rent+as+a+Percentage+of+Household+Income+in+the+Past+12+Months).]
+
+# Communicating trends with a static visualization
+
+**Your turn:** While Americans face rising housing costs, the percentage of cost-burdened households has not increased uniformly across the country. Design and implement a static visualization to communicate the trends for these 10 MSAs. Ensure it can reasonably be used to identify trends specific to each MSA.
+
+```{r}
+#| label: color-code
+
+# add code here
+```
+
+# Communicating trends with an interactive visualization
+
+**Your turn:** Design and implement an interactive visualization to communicate the trends for these 10 MSAs. Ensure it can reasonably be used to identify trends specific to each MSA. Leverage interactive components to reduce clutter in the visualization and effectively utilize interactivity.
+
+::: callout-tip
+
+## Suggestions include
+
+- Customizing the tooltip to provide better-formatted information
+- `highlight()` trend lines to draw attention to selected MSA
+- Implement the plot purely using `plot_ly()`
+
+:::
+
+```{r}
+#| label: interactive-graph
+
+# add code here
+```

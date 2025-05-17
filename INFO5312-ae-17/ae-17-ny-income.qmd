@@ -1,0 +1,88 @@
+---
+title: "AE 17: Visualizing household income in New York"
+author: Your name
+format: html
+---
+
+# Packages
+
+```{r}
+#| label: load-packages
+#| message: false
+
+library(tidyverse)
+library(sf)
+library(colorspace)
+library(scales)
+
+# set default theme
+theme_set(theme_minimal())
+
+# create reusable labels for each plot
+map_labels <- labs(
+  title = "Median household income in New York in 2023",
+  subtitle = "By census tract",
+  color = NULL,
+  fill = NULL,
+  caption = "Source: American Community Survey"
+)
+```
+
+# Load New York 2023 median household income
+
+We will use two data files for this analysis. The first contains median household incomes for each census tract in New York from 2023. The second contains the boundaries of each county in New York.
+
+```{r}
+#| label: import-data
+
+# load data
+ny_inc <- st_read(dsn = "data/ny-inc.geojson")
+ny_counties <- st_read(dsn = "data/ny-counties.geojson")
+
+ny_inc
+ny_counties
+```
+
+# Part 1
+
+## Draw a continuous choropleth of median household income
+
+**Your turn:** Create a choropleth map of median household income in New York. Use a continuous color gradient to identify each tract's median household income.
+
+::: callout-tip
+Use the stored `map_labels` to set the title, subtitle, and caption for this and the remaining plots.
+:::
+
+```{r}
+#| label: choropleth
+
+# add code here
+```
+
+**Your turn:** Now revise the map to use an optimized color gradient for improved readability.
+
+```{r}
+#| label: choropleth-viridis
+
+# add code here
+```
+
+## Overlay county borders
+
+**Your turn:** To provide better context, overlay the NY county borders on the choropleth map.
+
+```{r}
+#| label: overlay-county-borders
+
+# add code here
+```
+
+# Part 2
+
+**Your turn:** Continuous color palettes can be hard to distinguish visibly. To improve readability, convert the continuous color palette into a discrete one with 6 levels. Additionally, modify the projection method to use this [projection optimized for New York](https://spatialreference.org/ref/epsg/2261/).
+
+```{r}
+#| label: choropleth-discrete
+
+# add code here
+```

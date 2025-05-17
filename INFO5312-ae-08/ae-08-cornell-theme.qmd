@@ -1,0 +1,202 @@
+---
+title: "AE 08: A custom {ggplot2} theme for Cornell"
+author: "Christina Feng (cef229)"
+format: html
+execute:
+  warning: false
+  message: false
+  error: true
+knitr:
+  opts_chunk:
+    dev: "ragg_png"
+---
+
+```{r}
+#| label: packages
+
+library(tidyverse)
+library(scales)
+```
+
+# Cornell University brand identity
+
+**Organizational branding** is a set of visual and verbal elements that represent an organization. It is "how your audience perceives you" and created through "many elements, including your name, logo, tagline, website, colors, collateral, messaging, positioning, graphic elements, social media, and other outreach platforms."[^1]
+
+[^1]: Source: [What is Organizational Branding?](https://www.paradigmmarketinganddesign.com/what-is-organizational-branding/)
+
+[Cornell University](https://brand.cornell.edu/) maintains detailed guidelines for its brand identity. The [design center](https://brand.cornell.edu/design-center/) provides explicit instructions for using the Cornell logo, color palette, and typography, as well as [downloadable materials](https://brand.cornell.edu/downloads/) such as a PowerPoint template.
+
+Suppose we wish to create a series of statistical charts to be used in a Cornell Bowers CIS[^2] presentation, but we want to ensure they are both reproducible as well as consistent with the university's branding. We can use the {ggplot2} package to create a custom theme that adheres to the Cornell brand identity.
+
+[^2]: According to the [Cornell Bowers CIS brand guidelines](https://brand.cis.cornell.edu/using-the-brand/), always refer to it as **Cornell Bowers CIS** or the more formal **Cornell Ann S. Bowers College of Computing and Information Science** or **Cornell Bowers Computing and Information Science**, never just **CIS**.
+
+# Basic bar chart
+
+Let's create a basic chart to assist us with generating an appropriate {ggplot2} theme. Here we will use graduation trends from Cornell University from [College Scorecard](https://collegescorecard.ed.gov/). In this instance, we will use a bar chart to visualize the percentage of degrees awarded for three fields of study from 2018-22.
+
+```{r}
+#| label: load-data
+
+cornell_degrees <- read_csv("data/cornell-degrees.csv")
+cornell_degrees
+```
+
+```{r}
+#| label: basic-bar-chart
+
+cornell_degrees_plot <- cornell_degrees |>
+  filter(year >= 2018) |>
+  # prep data for specific bar plot
+  mutate(
+    year = factor(year),
+    field_of_study = fct_reorder2(.f = field_of_study, .x = year, .y = pct)
+  ) |>
+  ggplot(mapping = aes(x = field_of_study, y = pct, fill = year)) +
+  # ensure padding between dodged bar segments
+  geom_col(position = position_dodge2(padding = 0.2)) +
+  scale_x_discrete(labels = label_wrap(width = 15)) +
+  # format y axis labels
+  scale_y_continuous(labels = label_percent()) +
+  # optimal labels for chart
+  labs(
+    title = "Computer degrees have surpassed Engineering at Cornell",
+    subtitle = "Percentage of degrees awarded by field of study",
+    x = NULL,
+    y = NULL,
+    fill = NULL,
+    caption = "Source: College Scorecard"
+  )
+cornell_degrees_plot
+```
+
+# Develop a custom Cornell theme for {ggplot2}
+
+Based on Cornell's brand identity, we want to ensure our theme adheres to the following requirements:
+
+-   [ ] A white background with grid lines on the $y$-axis only.
+-   [ ] Ensure the grid lines on the $y$-axis are clearly visible.
+-   [ ] An appropriate serif font for the chart. Since the official font family is *Palantino* and proprietary to Adobe, we will use the free Google font [*Spectral*](https://fonts.google.com/specimen/Spectral) instead.
+-   [ ] The title and subtitle should be centered over the entire plot, not just the plot panel (i.e. the portion of the chart where the data is displayed).
+-   [ ] All text must be legible, including the axis labels and legend.
+-   [ ] Place the legend on the bottom of the plot.
+
+In addition, we want to
+
+-   [ ] Use the Cornell color palette for the fill of the bars.
+
+Note this final requirement is not part of the `theme()` as defined by {ggplot2}, but requires us to modify the appropriate scale for the chart.
+
+**Your turn:** Implement a Cornell-branded theme for {ggplot2} that meets the requirements outlined above.
+
+::: {.callout-tip title="Install the required font files first!"}
+In order to use the Spectral font, it needs to be installed on your system. You have two choices:
+
+1.  If you are running R on your personal computer, download [Spectral](https://fonts.google.com/specimen/Spectral) and install the font as you would any other font on your computer. Once installed, restart your R session and you should be able to use the font.
+2.  Install the font for this project only using
+
+``` r
+library(systemfonts)
+
+require_font("Spectral", dir = "fonts")
+```
+:::
+
+::: callout-tip
+Replace the `TODO` placeholders with the appropriate values. Use the [{ggplot2} `theme()` documentation](https://ggplot2.tidyverse.org/reference/theme.html) as a reference.
+:::
+
+```{r}
+#| label: cornell-bar-plot
+
+# cornell color palette - accent colors
+cornell_pal <- c("#006699", "#6EB43F", "#F8981D", "#EF4035", "#073949")
+
+cornell_degrees_plot +
+  # change color palette
+  scale_fill_manual(values = cornell_pal) +
+  # use theme_minimal() as a starting point
+  theme_minimal(
+    base_family = "Spectral",
+    base_size = 12
+  ) +
+  theme(
+    plot.title.position = "plot",
+    plot.title = element_text(hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5),
+    legend.position = "bottom",
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.y = element_line(linewidth = 0.3,
+                                      color = "grey"),
+    panel.grid.minor.y = element_line(linewidth = 0.3,
+                                      color = "grey"),
+    #axis.text = element_text(TODO),
+    #legend.text = element_text(TODO)
+  )
+```
+
+# Turn into a reusable function
+
+**Demo:** Convert your Cornell theme into a reusable `theme_cornell()` function and test it on two different charts.
+
+```{r}
+#| label: cornell-theme-function
+
+# define theme as its own function
+theme_cornell <- function(
+    base_family = "Spectral",
+    base_size = 12
+    ) {
+  theme_minimal(
+    base_family = base_family,
+    base_size = base_size
+  ) +
+    theme(
+      plot.title.position = "plot",
+      plot.title = element_text(hjust = 0.5),
+      plot.subtitle = element_text(hjust = 0.5),
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor.x = element_blank(),
+      panel.grid.major.y = element_line(linewidth = 0.3,
+                                        color = "grey"),
+      panel.grid.minor.y = element_line(linewidth = 0.15,
+                                        color = "grey")
+    )
+}
+```
+
+```{r}
+#| label: cornell-theme-test
+
+# existing bar chart
+cornell_degrees_plot +
+  scale_fill_manual(values = cornell_pal) +
+  theme_cornell()
+
+# line graph
+cornell_degrees |>
+  mutate(
+    field_of_study = fct_reorder2(
+      .f = field_of_study,
+      .x = year,
+      .y = pct
+    )
+  ) |>
+  ggplot(aes(x = year, y = pct, color = field_of_study)) +
+  geom_point() +
+  geom_line() +
+  scale_x_continuous(limits = c(1996, 2022), breaks = seq(1996, 2020, 4)) +
+  scale_color_manual(values = cornell_pal) +
+  scale_y_continuous(labels = label_percent()) +
+  labs(
+    x = "Graduation year",
+    y = "Percent of degrees awarded",
+    color = "Field of study",
+    title = "Cornell University degrees awarded from 1996-2022",
+    subtitle = "Only the top five fields as of 2022",
+    caption = "Source: Department of Education\nhttps://collegescorecard.ed.gov/"
+  ) +
+  theme_cornell() +
+  # still makes sense to leave the legend on the right
+  theme(legend.position = "right")
+```

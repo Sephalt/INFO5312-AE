@@ -1,0 +1,149 @@
+---
+title: "Considering the data-ink ratio: The lollipop chart"
+author: "Christina Feng (cef229)"
+format: html
+---
+
+::: callout-important
+Go to the [course GitHub organization](https://github.coecis.cornell.edu/info3312-sp25) and locate the repo titled `ae-02-YOUR_GITHUB_USERNAME` to get started.
+
+This AE is due January 28 at 11:59pm.
+:::
+
+```{r}
+#| label: packages
+
+library(tidyverse)
+
+# set default theme to minimal - reduce extraneous background ink
+theme_set(theme_minimal())
+
+options(scipen = 999)
+```
+
+For the following exercises we will work with data on houses that were sold in Tompkins County, NY in 2022-24.[^1]
+
+[^1]: Data source: [Redfin](https://www.redfin.com/county/1999/NY/Tompkins-County/filter/include=sold-1yr).
+
+The variables include:
+
+-   `sold_date` - date of last recorded sale
+-   `price` - sale price (in dollars)
+-   `beds` - number of bedrooms
+-   `baths` - number of bathrooms. Full bathrooms with shower/toilet count as 1, bathrooms with just a toilet count as 0.5.
+-   `area` - living area of the home (in square feet)
+-   `lot_size` - size of property's lot (in acres)
+-   `year_built` - year home was built
+-   `hoa_month` - monthly HOA dues. If the property is not part of an HOA, then the value is `NA`
+-   `town` - Census-defined town in which the house is located.
+-   `municipality` - Census-defined municipality in which the house is located. If the house is located outside of city or village limits, it is classified as "Unincorporated"
+-   `long` and `lat` - geographic coordinates of house
+
+The dataset can be found in the `data` folder of your repo.
+It is called `tompkins-home-sales.csv`. We will import the data and create a new variable, `decade_built_cat`, which identifies the decade in which the home was built. It will include catch-all categories for any homes pre-1940 and post-1990.
+
+```{r}
+#| label: load-tompkins
+
+tompkins <- read_csv("data/tompkins-home-sales.csv")
+```
+
+# Average sale price by decade
+
+Let's examine the average sales price of homes recently sold in Tompkins County by their age. To simplify this task, we will split the homes by decade of construction. It will include catch-all categories for any homes pre-1940 and post-1990. Then we will calculate the average sale price of homes sold by decade.
+
+```{r}
+#| label: mean-price-decade
+
+# create decade variable
+tompkins <- tompkins |>
+  mutate(
+    decade_built = (year_built %/% 10) * 10,
+    decade_built_cat = case_when(
+      decade_built <= 1940 ~ "1940 or before",
+      decade_built >= 1990 ~ "1990 or after",
+      .default = as.character(decade_built)
+    )
+  )
+
+# calculate mean sales price by decade
+mean_price_decade <- tompkins |>
+  group_by(decade_built_cat) |>
+  summarize(mean_price = mean(price))
+mean_price_decade
+```
+
+## Visualizing the data as a bar chart
+
+A conventional approach to visualizing this data is a **bar chart**. Since we already calculated the average sales price, we can use `geom_col()` to create the bar chart. We also graph it horizontally to avoid overlapping labels for the decades.
+
+```{r}
+#| label: bar-chart
+
+ggplot(
+  data = mean_price_decade,
+  mapping = aes(x = mean_price, y = decade_built_cat)
+) +
+  geom_col() +
+  labs(
+    x = "Mean sales price", y = "Decade built",
+    title = "Mean sales price of houses in Tompkins County, by decade built"
+  )
+```
+
+## Visualizing the data as a dot plot
+
+The bar chart violates the data-ink ratio principle. The bars are not necessary to convey the information. We can use a **dot plot** instead. The dot plot is a variation of the bar chart, where the bars are replaced by dots. The dot plot is a (potentially) better choice because it uses less ink to convey the same information.
+
+```{r}
+#| label: dot-plot
+
+ggplot(
+  data = mean_price_decade,
+  mapping = aes(x = mean_price, y = decade_built_cat)
+) +
+  geom_point(size = 4) +
+  labs(
+    x = "Mean sales price", y = "Decade built",
+    title = "Mean sales price of houses in Tompkins County, by decade built"
+  )
+```
+
+The dot plot minimizes the data-ink ratio, but it is not perfect. Unlike with a bar chart, there is no expectation that the origin of the $x$-axis begins at 0. The relative distance between the dots communicates the difference in mean sales price, and compared to the bar chart, the difference in mean sales price is exaggerated.
+
+## Visualizing the data as a lollipop chart
+
+The **lollipop chart** is a happy compromise, utilizing a skinny line + dot to communicate the values.
+
+::: callout-tip
+
+Try to construct the chart without using `geom_col()`. You would have to spend more time tweaking some of the function's parameters so it looks appropriate.
+
+There is another [`geom_*()`](https://rstudio.github.io/cheatsheets/html/data-visualization.html#geoms) that works pretty well here.
+
+:::
+
+```{r}
+#| label: lollipop-chart
+
+# add code here
+ggplot(
+  data = mean_price_decade,
+  mapping = aes(x = mean_price, y = decade_built_cat)
+) +
+  geom_point(size = 4) +
+  geom_segment(
+    mapping = aes(
+      xend = 0,
+      yend = decade_built_cat)
+  ) +
+  labs(
+    x = "Mean sales price", y = "Decade built",
+    title = "Mean sales price of houses in Tompkins County, by decade built"
+  )
+
+```
+
+# Acknowledgments
+
+- Exercise drawn from [Advanced Data Visualization](https://vizdata.org/) by Mine Çetinkaya-Rundel.

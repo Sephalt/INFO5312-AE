@@ -1,0 +1,278 @@
+---
+title: "Housing Market at a Glance"
+format: 
+  dashboard:
+    theme: [litera, custom.scss]
+    orientation: columns
+    mainfont: Atkinson Hyperlegible
+logo: logo.png
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+# import packages
+library(tidyverse)
+library(scales)
+library(plotly)
+library(sf)
+library(tigris)
+library(gt)
+library(geofacet)
+library(colorspace)
+
+# set default ggplot2 theme
+theme_set(theme_minimal())
+
+# import weekly mortgage interest rates
+mortgages <- read_csv("data/weekly_mortgage_rates.csv") |>
+  # clean columns for consistency
+  mutate(
+    fixed_30 = fixed_30 / 100,
+    fixed_15 = fixed_15 / 100
+  ) |>
+  select(date, fixed_30, fixed_15)
+
+# import median sale price and income gap
+median_housing <- read_csv("data/price_to_income.csv")
+
+# import mortgage origination rate
+origin <- read_csv("data/mortgage-origination-state.csv")
+
+# join with states sf data frame for mapping
+origin_sf <- states() |>
+  shift_geometry() |>
+  filter(STUSPS %in% state.abb) |>
+  left_join(y = origin)
+```
+
+```{r}
+#| label: create-graphs
+#| include: false
+
+# mortgage rates over time
+mortgage_p <- mortgages |>
+  pivot_longer(
+    cols = starts_with("fixed"),
+    names_to = "type",
+    values_to = "rate"
+  ) |>
+  mutate(
+    type = case_match(
+      .x = type,
+      "fixed_30" ~ "Fixed 30-year",
+      "fixed_15" ~ "Fixed 15-year"
+    )
+  ) |>
+  ggplot(mapping = aes(x = date, y = rate, color = type)) +
+  geom_line() +
+  scale_y_continuous(labels = label_percent()) +
+  scale_color_viridis_d(end = 0.8, guide = guide_legend(reverse = TRUE)) +
+  labs(
+    title = "Interest Rates 15- and 30-Year",
+    x = NULL, y = NULL, color = NULL
+  ) +
+  theme(legend.position = "top")
+
+# mortgage origination by state over time using geofacet
+origin_state <- ggplot(data = origin, mapping = aes(x = date, y = mort_adj)) +
+  geom_line() +
+  scale_x_continuous(breaks = c(2000, 2020), labels = c("'00", "'20")) +
+  facet_geo(facets = vars(NAME), labeller = label_wrap_gen(width = 15)) +
+  labs(
+    title = "Mortgage Originations per Capita",
+    subtitle = "Mortgages originated per 1,000 residents",
+    x = NULL,
+    y = NULL
+  ) +
+  theme(
+    strip.text = element_text(size = rel(0.6))
+  )
+
+# mortgage origination by state - ggplot2 and sf map
+origin_map <- origin_sf |>
+  filter(date == max(date)) |>
+  ggplot(mapping = aes(fill = mort_adj)) +
+  geom_sf() +
+  scale_fill_continuous_sequential(
+    palette = "viridis",
+    labels = label_comma(accuracy = 0.1),
+    rev = FALSE
+  ) +
+  labs(
+    title = "Mortgage Originations per Capita",
+    subtitle = "Mortgages originated per 1,000 residents",
+    fill = NULL
+  )
+
+# mortgage origination by state - plotly map
+origin_map_plotly <- origin |>
+  # add hover text strings
+  mutate(hover = str_glue("{NAME}: {label_number(accuracy = 0.1)(mort_adj)} per thousand residents in {date}")) |>
+  # use built-in geographic data
+  plot_geo(locationmode = "USA-states") |>
+  # add choropleth layer
+  add_trace(
+    # type of chart
+    type = "choropleth",
+    # 2 letter abbreviations for each state
+    locations = ~STUSPS,
+    # variable to use for color shading
+    z = ~mort_adj,
+    # variable to use for animation
+    frame = ~date,
+    # tooltip text
+    text = ~hover,
+    # type of info to use for tooltip hover
+    hoverinfo = "text",
+    # choose a color scale
+    colorscale = "Viridis",
+    # fix the minimum and maximum of the colorbar to the entire time period
+    zmin = min(origin$mort_adj),
+    zmax = max(origin$mort_adj),
+    # no separate borders between states
+    marker = list(line = list(
+      width = 0
+    ))
+  ) |>
+  # set layout options
+  layout(
+    # plot title
+    title = "Mortgages originated per thousand residents",
+    # geographic info
+    geo = list(
+      scope = "usa",
+      projection = list(type = "albers usa")
+    ),
+    # adjust font to match rest of site
+    font = list(
+      family = "Atkinson Hyperlegible"
+    )
+  ) |>
+  colorbar(title = "") |>
+  # animation options
+  animation_opts(
+    # frame duration in milliseconds
+    frame = 1000,
+  ) |>
+  animation_slider(
+    currentvalue = list(prefix = "Year: ")
+  )
+
+# median home prices
+median_home_p <- median_housing |>
+  drop_na() |>
+  ggplot(mapping = aes(x = date)) +
+  # housing price
+  geom_line(mapping = aes(y = med_sales_price, color = "sales_price", group = 1)) +
+  # median income
+  geom_line(mapping = aes(y = med_income, color = "income", group = 1)) +
+  # shading between the two
+  geom_ribbon(mapping = aes(ymin = med_income, ymax = med_sales_price), alpha = 0.2) +
+  scale_y_continuous(labels = label_currency()) +
+  scale_color_discrete_qualitative(labels = c("Median household income", "Median home sales price")) +
+  labs(
+    title = "Price-to-income ratio for home purchases",
+    x = NULL, y = NULL, color = NULL
+  )
+```
+
+# Stats
+
+## Column {width="20%"}
+
+```{r}
+#| include: false
+
+# get most recent records for mortgage rates and home sale prices
+last_row <- slice_tail(mortgages, n = 1)
+last_home_price <- slice_tail(median_housing, n = 1)
+```
+
+```{r}
+#| content: valuebox
+#| title: !expr str_glue('Average annual rate for a 30-year fixed mortgage in {last_row |> pull(date) |> format(format = "%b. %Y")}')
+#| icon: house-door
+#| color: info
+
+list(
+  value = label_percent(accuracy = 0.1)(last_row |> pull(fixed_30))
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: !expr str_glue('Average annual rate for a 15-year fixed mortgage in {last_row |> pull(date) |> format(format = "%b. %Y")}')
+#| icon: house-door
+#| color: info
+
+list(
+  value = label_percent(accuracy = 0.1)(last_row |> pull(fixed_15))
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: !expr str_glue('National median home price in {last_home_price |> pull(date) |> format(format = "%b. %Y")}')
+#| icon: currency-dollar
+#| color: info
+
+list(
+  value = label_dollar(scale_cut = cut_short_scale())(last_home_price |> pull(med_sales_price))
+)
+```
+
+## Column 
+
+```{r}
+#| title: "Mortgage Originations per Capita"
+#| height: 50%
+
+origin_map_plotly
+```
+
+```{r}
+#| title: Mortgage Interest Rates
+#| height: 50%
+
+# formatted table of weekly mortgage rates
+mortgages |>
+  gt() |>
+  cols_label(
+    date = "Date",
+    fixed_30 = "Fixed 30-year rate",
+    fixed_15 = "Fixed 15-year rate"
+  ) |>
+  fmt_percent(
+    columns = starts_with("fixed")
+  ) |>
+  fmt_date(
+    columns = date,
+    date_style = "month_day_year"
+  ) |>
+  sub_missing() |>
+  opt_interactive(
+    use_search = TRUE,
+    use_compact_mode = TRUE,
+    pagination_type = "jump"
+  )
+```
+
+## Column
+
+```{r}
+#| title: "Housing Economics"
+
+# interest rates
+ggplotly(mortgage_p)
+
+# median sales price
+median_home_p
+```
+
+# Data
+
+-  [Mortgage Interest Rates 15- and 30-Year](https://www.nahb.org/news-and-economics/housing-economics/national-statistics/weekly-mortgage-rates-15-and-30-year)
+-  [Median Home Prices](https://fred.stlouisfed.org/series/MSPUS)
+-  [Median Household Income](https://fred.stlouisfed.org/series/MEHOINUSA646N)

@@ -1,0 +1,116 @@
+---
+title: "AE 05: Waffle charts for visualizing proportions"
+author: "Christina Feng (cef229)"
+format: html
+---
+
+```{r}
+#| label: packages
+
+library(tidyverse)
+library(palmerpenguins)
+library(waffle)
+library(viridis)
+
+# fix seed value for reproducibility
+set.seed(123)
+
+theme_set(theme_void())
+```
+
+# Waffle charts
+
+[{waffle}](https://github.com/hrbrmstr/waffle) provides a {ggplot2} implementation of waffle plots. The typical workflow consists of preparing the data by tabulating in advance and then plotting it with {ggplot2} and `geom_waffle()`.
+
+# Basic waffle chart
+
+**Demonstration:** Prepare the `penguins` data frame to visualize the number of penguins by species.
+
+```{r}
+#| label: waffle-penguin-prep
+
+# add code here
+
+penguins |>
+  count(species)
+
+```
+
+**Demonstration:** Use the prepared data to draw a basic color-coded waffle chart
+
+```{r}
+#| label: waffle-penguin-basic
+
+# add code here
+
+penguins |>
+  count(species) |>
+  ggplot(mapping = aes(fill = species,
+                       values = n)) +
+  geom_waffle
+
+```
+
+# Improve the waffle chart
+
+**Your turn:** Adjust the waffle chart to use a fixed aspect ratio so the symbols are squares. Rotate the chart so the squares are stacked vertically.
+
+```{r}
+#| label: waffle-penguin-aspect
+
+# add code here
+
+penguins |>
+  count(species) |>
+  ggplot(mapping = aes(fill = species,
+                       values = n)) +
+  geom_waffle(flip = TRUE,
+              color = "white",
+              size = 1) +
+  coord_fixed() 
+
+```
+
+**Demonstration:** {waffle} will draw all observations on the chart. For larger datasets, this is problematic. Instead, we might want to visualize the **proportion** of observations in each category. Use `geom_waffle()` to represent the data as **proportions** instead.
+
+```{r}
+#| label: waffle-penguin-proportion
+
+# add code here
+
+penguins |>
+  count(species) |>
+  ggplot(mapping = aes(fill = species,
+                       values = n)) +
+  geom_waffle(flip = TRUE,
+              make_proportional = TRUE) +
+  coord_fixed() 
+
+```
+
+**Your turn:** Adjust the waffle chart to use a better color palette and move the legend to the top.
+
+```{r}
+#| label: waffle-penguin-color
+
+# add code here
+
+penguins |>
+  count(species) |>
+  ggplot(mapping = aes(fill = species,
+                       values = n)) +
+  geom_waffle(flip = TRUE,
+              make_proportional = TRUE,
+              color = "white",
+              size = 2) +
+  coord_fixed() +
+  scale_fill_brewer(palette = 8,
+                    direction = -1) +
+  theme(legend.position = "top",
+        legend.direction = "vertical") +
+  labs(
+    title = "Proportion of Penguins by Species",
+    fill = "Species"
+  )
+
+```

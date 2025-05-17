@@ -1,0 +1,298 @@
+---
+title: "AE 18: Visualizing increased polarization of baby names"
+author: "Christina Feng (cef229)"
+format: html
+---
+
+```{r}
+#| label: packages
+#| message: false
+
+library(tidyverse)
+library(gganimate)
+library(ggbeeswarm)
+library(scales)
+
+theme_set(theme_minimal())
+
+# colors for the Democratic and Republican parties
+dem <- "#00AEF3"
+rep <- "#E81B23"
+```
+
+In this application exercise we will use animation and the {gganimate} package to visualize the [increasing polarization of baby names in the United States](https://s2.washingtonpost.com/camp-rw/?s=67e7fcee8492b94b9240009b).
+
+# Import data
+
+Our data comes from the [Social Security Administration](https://www.ssa.gov/OACT/babynames/index.html) which publishes [detailed annual data on all babies born in the United States](https://www.ssa.gov/OACT/babynames/limits.html). We have prepared it by matching state-level births to the results of the 2024 U.S. presidential election so we can distinguish "red states" (those won by the Republican candidate Donald Trump) from "blue states" (those won by the Democratic candidate Kamala Harris). The data is stored in `data/partisan-names.csv`.
+
+```{r}
+#| label: import-data
+
+partisan_names <- read_csv(file = "data/partisan-names.csv") |>
+  # convert year to a factor column for visualizations
+  mutate(year = factor(year))
+partisan_names
+```
+
+We have aggregated the data to show the percentage of babies with a given name born in states that voted for Trump and Harris. The data contains the following columns:
+
+-   `outcome` - winner of the state-level vote in the 2024 U.S. presidential election
+-   `sex` - sex assigned at birth to the baby
+-   `year` - year of birth
+-   `name` - name of the baby
+-   `Trump` - percentage of the babies with the given name born in states that voted for Donald Trump in 2024
+-   `Harris` - percentage of the babies with the given name born in states that voted for Kamala Harris in 2024
+-   `part_diff` - difference between the percentage of babies with the given name born in Trump states and Harris states. Positive values indicate the name is more common in Trump states, whereas negative values indicate the name is more common in Harris states.
+
+We have filtered the data to focus on the years 1983, 1993, 2003, 2013, and 2023 (the most recent year of births for which data is available), and also limited the data to the 20 most-highly partisan names for red states and blue states (i.e. each year contains 40 rows - the top 20 most "Republican" names and the top 20 most "Democratic" names).
+
+# Create a static plot
+
+Before we attempt to animate a chart, let's first create a single **static** visualization that communicates the change in polarization over time.
+
+**Your turn:** Implement a jittered plot that shows the distribution of partisanship for names in red states and blue states for each year. Use the `geom_quasirandom()` function from the {ggbeeswarm} package to create the plot.[^1]
+
+[^1]: Unlike `geom_jitter()`, this will ensure there are no overlapping points in the plot. You can also use `geom_beeswarm()` but this introduces unnecessary curvatures into the jittering.
+
+```{r}
+#| label: static-beeswarm
+
+# add code here
+
+ggplot(
+  data = partisan_names,
+  mapping = aes(
+    x = year,
+    y = part_diff,
+    color = outcome
+    )
+  ) +
+  geom_quasirandom() +
+  scale_color_manual(values = c(dem, rep))
+
+```
+
+# Define plot components for the animated chart
+
+Before we attempt to animate the chart, let's first define the components of the chart that will remain static throughout the animation.
+
+**Your turn:** Modify your plot above to have a single category on the $y$-axis. This is what will change throughout the animation.
+
+::: callout-tip
+## Helpful hint
+
+When we animate the chart, we will define each **frame** based on the `year` variable. When testing the static portions of the chart, you can facet the graph on the `year` variable to see how the chart will look for each year. When we animate it, each facet panel will essentially become the frames of the animation.
+:::
+
+```{r}
+#| label: anim-static-components
+
+# add code here
+
+ggplot(
+  data = partisan_names,
+  mapping = aes(
+    y = "this could be anything", #this is a terrible design choice for static graphs but we're preparing for an animated one
+    x = part_diff,
+    color = outcome
+    )
+  ) +
+  geom_quasirandom() +
+  scale_color_manual(values = c(dem, rep)) +
+  facet_wrap(facets = vars(year)) # preview how the design should be
+
+
+```
+
+# Implement basic animation
+
+Now that we have the static components of the chart, we can animate it. The {gganimate} package provides a simple way to animate a plot by defining the `transition_*()` function.
+
+**Your turn:** Implement the animation using the appropriate `transition_*()` function.
+
+```{r}
+#| label: basic-animation
+
+# add code here
+
+
+ggplot(
+  data = partisan_names,
+  mapping = aes(
+    y = "year", #this is a terrible design choice for static graphs but we're preparing for an animated one
+    x = part_diff,
+    color = outcome
+    )
+  ) +
+  geom_quasirandom() +
+  scale_color_manual(values = c(dem, rep)) +
+  transition_states(states = year)
+
+# Look at the animation in the "Viewer" tab
+# If you get a really long thing where it gets individual frame pngs, restart RStudio and run renv:restore() or load library(magick)
+
+```
+
+**Your turn:** We need to know what years the points are transitioning between. Add this using an appropriate label to the plot.
+
+::: callout-tip
+## How do we know the current year?
+
+Look at the documentation for your `transition_*()` function. It should provide information on how to add labels to the animation based on the transitioning states.
+:::
+
+```{r}
+#| label: basic-animation-year
+
+# add code here
+
+ggplot(
+  data = partisan_names,
+  mapping = aes(
+    y = "year", 
+    x = part_diff,
+    color = outcome
+    )
+  ) +
+  geom_quasirandom() +
+  scale_color_manual(values = c(dem, rep)) +
+  transition_states(states = year) +
+  labs(
+    subtitle = "{closest_state}")
+
+```
+
+**Your turn:** Adjust the animation to make it smoother. Consider adjusting appropriate parameters in the `transition_*()` function as well as the easing used for interpolation via `ease_aes()`.
+
+```{r}
+#| label: smooth-animation
+
+# add code here
+
+ggplot(
+  data = partisan_names,
+  mapping = aes(
+    y = "year", 
+    x = part_diff,
+    color = outcome
+    )
+  ) +
+  geom_quasirandom() +
+  scale_color_manual(values = c(dem, rep)) +
+  transition_states(states = year) +
+  ease_aes() +
+  labs(
+    subtitle = "{closest_state}")
+
+
+```
+
+# Add shadows
+
+To make the animation easier to interpret, it's helpful to add reference marks during the transition to show where the points are moving from and to. This can be done using the `shadow_*()` functions.
+
+**Your turn:** Implement a `shadow_*()` function to show the transition more smoothly.
+
+```{r}
+#| label: shadow-animation
+
+# add code here
+
+ggplot(
+  data = partisan_names,
+  mapping = aes(
+    y = "year", 
+    x = part_diff,
+    color = outcome
+    )
+  ) +
+  geom_quasirandom() +
+  scale_color_manual(values = c(dem, rep)) +
+  transition_states(states = year) +
+  ease_aes() +
+  shadow_wake(.05) +
+  labs(
+    subtitle = "{closest_state}")
+
+```
+
+# Rendering
+
+We can control the rendering process using the `animate()` function.
+
+**Your turn:** Improve the animated chart through it's rendering. Some suggestions include:
+
+-   Increase the number of frames to make the animation smoother.
+-   Increase the length of the animation to give the reader more time to interpret each frame.
+-   Add a pause at the start and end of the animation to give the reader time to interpret the chart.
+
+```{r}
+#| label: render-animation
+
+# add code here
+
+plot <- ggplot(
+  data = partisan_names,
+  mapping = aes(
+    y = "year", 
+    x = part_diff,
+    color = outcome
+    )
+  ) +
+  geom_quasirandom() +
+  scale_color_manual(values = c(dem, rep)) +
+  transition_states(states = year) +
+  ease_aes() +
+  shadow_wake(.05) +
+  labs(
+    subtitle = "{closest_state}")
+
+
+ animate(plot,
+         nframes = 150, 
+         fps = 30,
+         start_pause = 5,
+         end_pause = 5
+         )
+ 
+```
+
+**Your turn:** Implement the same settings using a Quarto code chunk option. Adjust the aspect ratio of the plot to make it more compact vertically.
+
+::: callout-tip
+## Implementing the `gganimate` code chunk option
+
+Quarto can pass arbitrary R expressions through code chunk options using the syntax `!expr`. For example, if we wanted to render the animation with 300 frames at 15 frames per second, we could use the following code chunk option:
+
+``` r
+#| gganimate: !expr list(nframes = 300, fps = 15)
+```
+:::
+
+```{r}
+#| label: render-animation-quarto
+#| gganimate: !expr list(nframes = 300, fps = 15)
+
+# add code here
+
+ggplot(
+  data = partisan_names,
+  mapping = aes(
+    y = "year", 
+    x = part_diff,
+    color = outcome
+    )
+  ) +
+  geom_quasirandom() +
+  scale_color_manual(values = c(dem, rep)) +
+  transition_states(states = year) +
+  ease_aes() +
+  shadow_wake(.05) +
+  labs(
+    subtitle = "{closest_state}")
+```
+
+# Acknowledgments
+
+-   Application exercise inspired by Philip Bump's [*How to Read This Chart* March 29th newsletter](https://s2.washingtonpost.com/camp-rw/?s=67e7fcee8492b94b9240009b)

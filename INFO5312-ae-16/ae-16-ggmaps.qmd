@@ -1,0 +1,216 @@
+---
+title: "AE 16: Drawing maps with {ggmap}"
+author: "Christina Feng (cef229)"
+format: html
+---
+
+# Packages
+
+```{r}
+#| label: load-packages
+#| message: false
+
+library(tidyverse)
+library(ggmap)
+
+# set default theme
+theme_set(theme_minimal())
+```
+
+# Load NYC 311 reports
+
+Let's first load a subset of 311 service requests in New York City.^[These reports were obtained from the [NYC Open Data portal](https://data.cityofnewyork.us/Social-Services/311-Service-Requests-from-2010-to-Present/erm2-nwe9/about_data) API.]
+
+```{r}
+#| label: import-data
+
+# load data
+nyc_311 <- read_csv(file = "data/nyc-311.csv")
+glimpse(nyc_311)
+```
+
+This subset includes 311 service requests related to Food Poisoning in commercial establishments (e.g. restaurants, cafeterias, food carts).
+
+# Register a Stadia Maps API Key
+
+**Your turn:** Store your Stadia Maps API key using the function
+
+```r
+register_stadiamaps(key = "57ca1618-ac30-439b-a68a-f3bc73bcb331", write = TRUE)
+```
+
+replacing `"YOUR-API-KEY"` with your actual API key. Otherwise you will not be able to obtain map tiles and complete the application exercise.
+
+# Obtain map tiles for New York City
+
+**Your turn:** Use [bboxfinder.com](http://bboxfinder.com/) to find bounding box coordinates for New York City. Then, use `get_stamenmap()`  to obtain map tiles for New York City and visualize the map.
+
+::: callout-note
+
+I recommend a `zoom` level of between 8-12. Trial and error should help you decide on the best value.
+
+:::
+
+```{r}
+#| label: tiles-nyc
+
+# store bounding box coordinates
+nyc_bb <- c(
+  left = -74.37,
+  bottom = 40.48,
+  right = -73.64,
+  top = 40.87
+)
+
+nyc <- get_stadiamap(
+  bbox = nyc_bb,
+  zoom = 10
+)
+
+# plot the raster map
+ggmap(nyc)
+```
+
+# Food poisoning rates
+
+![](https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZTVqcWhmN2wydmJ1bGkwaTJtbmVnc2NoazNvazFlMGU1MzBzZnY1dyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/gPgBMNqdIArIRGpKmX/giphy.gif){fig-align="center" fig-alt="A video clip from the TV show 'Parks and Recreation' where a character is in a hospital gown and saying to himself in a mirror 'Stop. Pooping.'"}
+
+The COVID-19 pandemic caused massive disruption in the restaurant industry. Due to social distancing measures and lockdowns, restaurant traffic decreased significantly.
+
+While this had significant financial ramifications, one potentially overlooked consequence is the impact on food poisoning rates. With fewer people eating out, the number of food poisoning complaints may have decreased.
+
+**Your turn:** Visualize the geospatial distribution of complaints related to food poisoning in NYC in March, April, and May over a four-year time period (2018-23). Construct the chart in such a way that you can make valid comparisons over time and geographically. What impact did COVID-19 have on food poisoning cases in NYC? Did it vary geographically?
+
+```{r}
+#| label: covid-food-poison
+
+nyc_covid_food_poison <- nyc_311 |>
+  # generate a year variable
+  mutate(year = year(created_date)) |>
+  # only keep reports in March, April, and May from 2018-23
+  filter(month(created_date) %in% 3:5, year %in% 2018:2023) |>
+  drop_na(borough) # added to drop NA in Borough
+
+# add code here
+
+ggmap(nyc) +
+  geom_point(
+    data = nyc_covid_food_poison,
+    aes(x = longitude, y = latitude, color = borough),
+    alpha = 1, size = .75
+  ) +
+  facet_wrap(~year, ncol = 3) +
+  scale_color_manual(values = c(
+    "MANHATTAN" = "cornflowerblue",
+    "BROOKLYN" = "salmon",
+    "QUEENS" = "mediumorchid1",
+    "BRONX" = "lightgoldenrod1",
+    "STATEN ISLAND" = "forestgreen"
+  )) +
+  labs(
+    title = "Food Poisoning in NYC before, during, and after the COVID-19",
+    subtitle = "From March-May during 2018-2023",
+    x = "Longitude",
+    y = "Latitude",
+    color = "Borough"
+  )
+
+
+```
+
+**Your turn:** Now visualize the change in food complaints over time *without making a map.* How else could you represent this data? Does making it a map improve the understanding of the data, or add more confusion?
+
+```{r}
+#| label: covid-food-poison-line
+
+# add code here
+
+borough_order <- c("MANHATTAN", "BROOKLYN", "QUEENS", "BRONX", "STATEN ISLAND")
+
+nyc_food_trend <- nyc_covid_food_poison |>
+  filter(borough != "Unspecified") |>
+  count(year, borough) |>
+  mutate(borough = factor(borough, levels = borough_order)) 
+
+# chart
+ggplot(nyc_food_trend, aes(x = year, 
+                           y = n, 
+                           color = borough, 
+                           group = borough)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  geom_vline(xintercept = 2020, linetype = "dashed", color = "gray50", size = 1) +
+  annotate("text", x = 2020.2, y = max(nyc_food_trend$n), 
+           label = "Start of the Pandemic", color = "gray50", hjust = .05) +
+  scale_x_continuous(breaks = 2018:2023) +
+  labs(
+    title = "Food Poisoning in NYC before, during, and after the COVID-19",
+    subtitle = "From March-May during 2018-2023",
+    x = "Year",
+    y = "Number of Complaints",
+    color = "Borough"
+  )
+
+```
+
+# Visualize food poisoning complaints on Roosevelt Island
+
+**Your turn:** Now focus on food poisoning complaints on or around Roosevelt Island.^[Also the location of Cornell Tech.] Use `get_stamenmap()` to obtain map tiles for the Roosevelt Island region and overlay with the food poisoning complaints. What type of chart is more effective for this task?
+
+::: callout-note
+
+## Tips and extensions
+
+- Consider adjusting your `zoom` for this geographic region.
+- Try a different set of map tiles. Which one looks both interpretable as well as aesthetically pleasing?
+
+:::
+
+```{r}
+#| label: food-poison-roosevelt
+
+# Obtain map tiles for Roosevelt Island
+roosevelt_bb <- c(
+  left = -73.966987,
+  bottom = 40.749053,
+  right = -73.936347,
+  top = 40.774079
+)
+roosevelt_map <- get_stadiamap(
+  bbox = roosevelt_bb,
+  zoom = 14
+)
+
+# add code here
+
+ggmap(roosevelt)
+
+
+roosevelt_food_poison <- nyc_covid_food_poison |>
+  filter(longitude >= -73.966987 & longitude <= -73.936347,
+         latitude >= 40.749053 & latitude <= 40.774079)
+
+
+ggmap(roosevelt) +
+  geom_point(
+    data = roosevelt_food_poison,
+    aes(x = longitude, y = latitude, color = borough),
+    alpha = 1, size = 3
+  ) +
+  labs(
+    title = "Food Poisoning Complaints Near Roosevelt Island",
+    subtitle = "March-May (2018-2023)",
+    x = "Longitude",
+    y = "Latitude",
+    color = "Borough"
+  ) +
+  scale_color_manual(values = c(
+    "MANHATTAN" = "cornflowerblue",
+    "BROOKLYN" = "salmon",
+    "QUEENS" = "mediumorchid1",
+    "BRONX" = "lightgoldenrod1",
+    "STATEN ISLAND" = "forestgreen"
+  ))
+
+
+```

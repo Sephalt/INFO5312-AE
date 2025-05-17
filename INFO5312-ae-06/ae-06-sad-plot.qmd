@@ -1,0 +1,223 @@
+---
+title: "AE 06: Take a sad plot, and make it better"
+author: Your name
+format: html
+---
+
+```{r}
+#| label: packages
+
+library(tidyverse)
+library(scales)
+```
+
+# Take a sad plot, and make it better
+
+The American Association of 
+University Professors (AAUP) is a nonprofit membership association of faculty 
+and other academic professionals. 
+[This report](https://www.aaup.org/sites/default/files/files/AAUP_Report_InstrStaff-75-11_apr2013.pdf) 
+by the AAUP shows trends in instructional staff employees between 1975 
+and 2011, and contains an image very similar to the one given below.
+
+![](images/staff-employment.png)
+
+Each row in this dataset represents a faculty type, and the columns are the years for which we have data. 
+The values are percentage of hires of that type of faculty for each year.
+
+```{r}
+#| label: load-data-staff
+staff <- read_csv("data/instructional-staff.csv")
+staff
+```
+
+# Recreate the visualization
+
+In order to recreate this visualization we need to first reshape the data to have one variable for faculty type and one variable for year. In other words, we will convert the data from the **wide format** to **long format**. 
+
+**Your turn:** Reshape the data so we have one row per faculty type and year, and the percentage of hires as a single column.
+
+```{r}
+#| label: reshape-instructor
+
+staff_long <- staff |>
+  pivot_longer(cols = -faculty_type,
+               names_to = "year",
+               values_to = "percentage") |>
+  mutate(year = as.numeric(year)) |>
+  filter(!is.na(percentage))
+
+```
+
+**Your turn:** Attempt to recreate the original bar chart as best as you can. Don't worry about theming or color palettes right now. The most important aspects to incorporate:
+
+- Faculty type on the $y$-axis with bar segments color-coded based on the year of the survey
+- Percentage of instructional staff employees on the $x$-axis
+- Begin the $x$-axis at 5%
+- Label the $x$-axis at 5% increments
+- Match the order of the legend
+
+::: callout-tip
+
+[{forcats}](http://forcats.tidyverse.org/) contains many functions for defining and adjusting the order of levels for **factor** variables. Factors are often used to enforce specific ordering of categorical variables in charts.
+
+:::
+
+```{r}
+#| label: sad-plot-lite
+
+# add code here
+
+staff_long |> 
+  mutate(faculty_type = fct_relevel(faculty_type, 
+                                    "Graduate Student Employees", 
+                                    "Part-Time Faculty", 
+                                    "Full-Time Non-Tenure-Track Faculty", 
+                                    "Full-Time Tenure-Track Faculty", 
+                                    "Full-Time Tenured Faculty")) |>
+
+  ggplot(aes(x = percentage, 
+             y = faculty_type,
+             fill = factor(year))) +
+    geom_col(position = "dodge") +
+    scale_x_continuous(breaks = seq(from = 5, to = 45, by = 5))
+
+```
+
+# Let's make it better
+
+The original plot is not very informative. It's hard to compare the trends for across each faculty type.
+
+**Your turn:** Improve the chart by using a **relative frequency bar chart** with year on the $y$-axis and faculty type encoded using color.
+
+```{r}
+#| label: sad-plot-bar
+
+# add code here
+
+staff_long |> 
+  mutate(year = as.factor(year),
+    faculty_type = fct_relevel(faculty_type, 
+                               "Graduate Student Employees", 
+                               "Part-Time Faculty", 
+                               "Full-Time Non-Tenure-Track Faculty", 
+                               "Full-Time Tenure-Track Faculty", 
+                               "Full-Time Tenured Faculty")) |>
+
+  ggplot(aes(x = percentage, 
+             y = year,
+             fill = faculty_type)) +
+  geom_col(position = "fill") +
+  scale_x_continuous(labels = label_percent(1))+
+  scale_fill_viridis_d(begin = .1,
+                       end = .8) +
+  labs(
+    title = "Faculty Type Over Time",
+    x = "Percentage",
+    y = "Year",
+    fill = "Faculty Type"
+  )
+
+```
+
+What are this chart's advantages and disadvantages? *Add response here*
+
+The chart allows you to easily compare the individual faculty types over time. However, the actual percentage of the faculty types are not clear, especially if it's not "Full-Time Tenured Faculty," which is the only type to start at 0%.
+
+## Now we want a line chart
+
+**Your turn:** Let's instead use a **line chart**. Graph the data with year on the $x$-axis and percentage of employees on the $y$-axis. Distinguish each faculty type using an appropriate aesthetic mapping.
+
+```{r}
+#| label: sad-plot-line
+
+# add code here
+
+staff_long |>
+  ggplot(aes(
+    x = year,
+    y = percentage,
+    color = faculty_type,
+    group = faculty_type
+  )) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2)
+
+```
+
+**Your turn:** Now we want to clean it up.
+
+- Add a proper title and labelling to the chart
+- Use an optimized color palette^[{viridis} is often a good choice, but you can find others.]
+- Order the legend values by the final value of the `percentage` variable
+
+```{r}
+#| label: sad-plot-line-final
+
+# add code here
+
+staff_final <- staff_long |>
+  group_by(faculty_type) |>
+  slice_max(year) |>
+  arrange(desc(percentage))
+
+staff_long |>
+  mutate(faculty_type = factor(faculty_type,
+                               levels = staff_final$faculty_type))
+
+staff_long |>
+  ggplot(aes(
+    x = year,
+    y = percentage,
+    color = faculty_type,
+    group = faculty_type
+  )) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  labs(
+    title = "Faculty Type Trends Over Time",
+    x = "Year",
+    y = "Percentage",
+    color = "Faculty Type"
+  ) +
+  scale_color_viridis_d(begin = .1,
+                        end = .8) 
+
+
+```
+
+# Goal: even more improvement!
+
+Colleges and universities have come to rely more heavily on non-tenure track faculty members over time, in particular part-time faculty (e.g. contingent faculty, adjuncts). We want to show **academia's reliance on part-time faculty**.
+
+**Your turn:** With your peers, sketch/design a chart that highlights the trend for part-time faculty. What type of geom would you use? What elements would you include? What would you remove?
+
+*Add response here.*
+
+**Your turn:** Create the chart you designed above using {ggplot2}. Post your completed chart to [this discussion thread](https://github.coecis.cornell.edu/orgs/info3312-sp25/discussions/20).
+
+::: callout-tip
+
+When you render the document, your plot images are automatically saved as PNG files in the `ae-05-sad-plot_files/figure-html` directory. You can use these images to post your chart to the discussion thread, or use the `ggsave()` function to directly save your plot as an image file. For example,
+
+```r
+ggsave(
+  filename = "images/part-time-faculty.png",
+  plot = last_plot(),
+  width = 8, height = 6, bg = "white"
+)
+```
+
+saves the last generated plot to a file named `part-time-faculty.png` in the `images` directory. It has a defined height and width (in "inches") with a white background.
+
+:::
+
+```{r}
+#| label: part-time-faculty
+
+# add code here
+```
+
+# Acknowledgments
+
+- Exercise derived from [Data Science in a Box](https://datasciencebox.org/course-materials/lab-instructions/lab-06/lab-06-sad-plots.html) and licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).

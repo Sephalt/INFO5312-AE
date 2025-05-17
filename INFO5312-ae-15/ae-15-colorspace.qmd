@@ -1,0 +1,116 @@
+---
+title: "AE 15: Optimizing color spaces"
+author: "Christina Feng (cef229)"
+format: html
+---
+
+```{r}
+#| label: load-packages
+#| message: false
+
+library(tidyverse)
+library(colorspace) # for improved color palettes
+library(scales) # for improved labels
+library(ggthemes) # for scale_color_colorblind()
+
+theme_set(theme_classic(base_size = 12))
+```
+
+# Import birth data
+
+The Social Security Administration keeps detailed records on births and deaths in the United States. For our analysis, we will use a dataset of the number of births daily in the United States from 1994-2014.^[Collected by [FiveThirtyEight](https://github.com/fivethirtyeight/data/tree/master/births).]
+
+```{r}
+#| label: import-data
+
+births <- read_rds("data/births.Rds")
+births
+```
+
+# The Friday the 13th effect
+
+Friday the 13th is considered an unlucky day in Western superstition. Let's see if fewer babies are born on the 13th of each month if it falls on a Friday compared to another week day. Specifically, we will compare the average number of births on the 13th of the month to the average number of births on the 6th and 20th of the month.
+
+**Your turn:** Visualize the results using a bar chart. Emphasize the difference on Fridays compared to other weekdays.^[Essentially a replication of [Carl Bialik's original chart](https://fivethirtyeight.com/features/some-people-are-too-superstitious-to-have-a-baby-on-friday-the-13th/).]
+
+```{r}
+#| label: friday-13
+
+friday_13_births <- births |>
+  # only look at births on the 6, 13, and 20th
+  filter(date_of_month %in% c(6, 13, 20)) |>
+  # distinguish 6/20 from 13
+  mutate(not_13 = date_of_month == 13) |>
+  # calculate average number of births for each week day and whether or not it was the 13th
+  summarize(
+    avg_births = mean(births),
+    .by = c(day_of_week, not_13)
+  ) |>
+  # calculate the difference in percentage
+  pivot_wider(
+    names_from = not_13,
+    values_from = avg_births
+  ) |>
+  mutate(pct_diff = (`TRUE` - `FALSE`) / `FALSE`) |>
+  arrange(day_of_week)
+
+# add code here
+
+ggplot(data = friday_13_births, mapping = aes(x = day_of_week,
+                                                y = pct_diff,
+                                                fill = day_of_week == "Friday")) +
+  geom_col() +
+  scale_fill_manual(values = c("grey", "lightpink"),
+                    guide = "none")
+```
+
+# Create a heatmap showing average number of births by day of year
+
+Let's explore the relative popularity of each calendar day for births. We will create a heatmap showing the relative ratio of births for each day of the year compared to the annual average.
+
+```{r}
+#| label: births-heatmap
+#| fig-asp: 0.4
+#| fig-width: 8
+
+avg_births_month_day <- births |>
+  group_by(month, date_of_month_categorical) |>
+  summarize(avg_births = mean(births), .groups = "drop") |>
+  mutate(avg_births_ratio = avg_births / mean(births$births))
+avg_births_month_day
+
+birth_days_plot <- ggplot(
+  data = avg_births_month_day,
+  # By default, the y-axis will have December at the top, so use fct_rev() to reverse it
+  mapping = aes(x = date_of_month_categorical, y = fct_rev(month), fill = avg_births_ratio)
+) +
+  geom_tile() +
+  # Add nice labels
+  labs(
+    x = "Day of the month", y = NULL,
+    title = "Average births per day",
+    subtitle = "1994-2014",
+    fill = "Ratio of births\nrelative to average"
+  ) +
+  # Force all the tiles to have equal widths and heights
+  coord_equal()
+birth_days_plot
+```
+
+**Your turn:** Modify the plot to use an appropriate color palette. What days have an unusually high or low number of births?
+
+```{r}
+#| label: births-heatmap-better
+#| fig-asp: 0.4
+#| fig-width: 8
+
+# add code here
+birth_days_plot +
+  scale_fill_continuous_diverging(mid = 1,
+                                  palette = "Blue-Red 3")
+
+```
+
+*Add response here.*
+Based on this heatmap, January 1st and December 25th have the lowest ratios of birth. This may be because birthing staff like doctors, nurses, or midwives avoid working on this day. Moms may also consider changing their child's birth date to avoid landing on a huge holiday like New Year's Eve and Christmas.
+

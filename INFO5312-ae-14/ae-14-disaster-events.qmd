@@ -1,0 +1,108 @@
+---
+title: "AE 14: Visceralizing billion dollar weather and climate disasters"
+categories: 
+  - Application exercise
+---
+
+```{r}
+#| label: packages
+#| include: false
+
+library(tidyverse)
+library(scales)
+library(colorspace)
+```
+
+# Measuring large-scale weather and climate disasters
+
+The [**Billion-Dollar Weather and Climate Disasters** dataset](https://www.ncei.noaa.gov/access/billions/) contains information on weather and climate disasters in the United States that have caused at least one billion dollars in damage. The dataset includes the year, the event type, the location, the number of deaths, and the total cost of the disaster. It is produced by the [National Oceanic and Atmospheric Administration (NOAA)](https://www.ncei.noaa.gov/access/billions/).^[For now.]
+
+```{r}
+#| label: load-data
+
+# skip first two rows - not data
+disasters <- read_csv(file = "data/events-US-1980-2024-Q4.csv", skip = 2) |>
+  # clean column names
+  janitor::clean_names() |>
+  # fix date variables
+  mutate(
+    across(
+      .cols = ends_with("date"),
+      .fns = ymd
+    )
+  )
+disasters
+```
+
+# Explore the data
+
+**Your turn:** With a partner or small team, explore key trends in the data and discuss:
+
+- What emotions could this data evoke?
+The dataset shows the names, costs, and deaths of disasters. The dataset also shows the beginning and end date of the disasters, revealing how some lasted for days.Having clear quantitive data can invoke strong emotions like sadness, fear, or even hope.
+
+- What visualization techniques could enhance that emotional impact?
+To make the message stronger, different types of charts can help. A bar chart showing the deadliest disasters or a timeline of events with important details. I believe that timelines are quite useful in data communication because it tells a story over time. A heatmap can highlight years with the most damage, while a map can show where disasters happen most often.
+
+::: callout-tip
+
+## Explore the NOAA website
+
+The NOAA has created a handful of [static and interactive visualizations](https://www.ncei.noaa.gov/access/billions/) using this data that are available online. Feel free to look at them for inspiration.
+
+:::
+
+```{r}
+#| label: eda
+
+
+```
+
+# Design and implement a visualization
+
+**Your turn:** Create a visualization (or set of visualizations) designed to **elevate emotion** and tell a story of the impact of these disasters. Consider how you can use color, annotation, personal perspectives,^[Real or simulated for the purpose of the exercise.], etc. to make the data more engaging and impactful.
+
+::: callout-note
+
+Feel free to bring in additional data sources for this exercise, albeit we have only a limited amount of time together.
+
+:::
+
+```{r}
+#| label: elevate-emotion
+#| fig-width: 10
+
+# Create the ridge plot with disasters in alphabetical order for both plot and legend
+plot <- ggplot(disasters, aes(x = begin_date, 
+                              y = cpi_adjusted_cost,
+                              color = disaster,
+                              size = cpi_adjusted_cost)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "loess", 
+              se = FALSE, 
+              aes(group = 1),
+              show.legend = FALSE) + 
+  scale_fill_viridis_d(direction = -1) +
+  scale_y_continuous(labels = label_dollar()) +
+  scale_size_continuous(range = c(1, 7)) + 
+  labs(title = "Cost of Disasters Over Time", 
+       x = "Year", 
+       y = "Cost",
+       color = "Disaster Type") +
+  theme_minimal() +
+  guides(size = "none")
+
+plot
+
+ggsave("disaster_plot.png", plot = plot, width = 8, height = 6, dpi = 300)
+```
+
+When you are finished, share your visualization(s) with the class on [GitHub Discussions](https://github.coecis.cornell.edu/orgs/info3312-sp25/discussions/35).
+
+::: callout-note
+
+## Remember `ggsave()`
+
+You can use `ggsave()` to export your graphs to local files in order to post on the discussion thread.
+
+:::

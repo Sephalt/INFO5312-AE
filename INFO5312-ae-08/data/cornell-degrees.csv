@@ -1,0 +1,136 @@
+field_of_study,year,pct
+Computer,1996,0.0421
+Computer,1997,0.0497
+Computer,1998,0.0581
+Computer,1999,0.0716
+Computer,2000,0.0684
+Computer,2001,0.0859
+Computer,2002,0.0745
+Computer,2003,0.0463
+Computer,2004,0.0327
+Computer,2005,0.032
+Computer,2006,0.0221
+Computer,2007,0.0263
+Computer,2008,0.0262
+Computer,2009,0.0264
+Computer,2010,0.0297
+Computer,2011,0.0254
+Computer,2012,0.0334
+Computer,2013,0.0402
+Computer,2014,0.0423
+Computer,2015,0.058
+Computer,2016,0.0809
+Computer,2017,0.0955
+Computer,2018,0.1091
+Computer,2019,0.1222
+Computer,2020,0.1282
+Computer,2021,0.1535
+Computer,2022,0.1701
+Business Marketing,1996,0.1076
+Business Marketing,1997,0.1091
+Business Marketing,1998,0.1104
+Business Marketing,1999,0.1049
+Business Marketing,2000,0.1228
+Business Marketing,2001,0.1122
+Business Marketing,2002,0.0979
+Business Marketing,2003,0.1105
+Business Marketing,2004,0.1977
+Business Marketing,2005,0.1574
+Business Marketing,2006,0.1676
+Business Marketing,2007,0.1512
+Business Marketing,2008,0.1355
+Business Marketing,2009,0.1478
+Business Marketing,2010,0.1294
+Business Marketing,2011,0.1395
+Business Marketing,2012,0.1413
+Business Marketing,2013,0.1364
+Business Marketing,2014,0.1373
+Business Marketing,2015,0.1366
+Business Marketing,2016,0.1474
+Business Marketing,2017,0.142
+Business Marketing,2018,0.1439
+Business Marketing,2019,0.1509
+Business Marketing,2020,0.1307
+Business Marketing,2021,0.1247
+Business Marketing,2022,0.1344
+Engineering,1996,0.2683
+Engineering,1997,0.2915
+Engineering,1998,0.2636
+Engineering,1999,0.2819
+Engineering,2000,0.2575
+Engineering,2001,0.2388
+Engineering,2002,0.2904
+Engineering,2003,0.173
+Engineering,2004,0.1614
+Engineering,2005,0.1678
+Engineering,2006,0.1695
+Engineering,2007,0.1814
+Engineering,2008,0.1834
+Engineering,2009,0.1813
+Engineering,2010,0.1791
+Engineering,2011,0.1829
+Engineering,2012,0.1805
+Engineering,2013,0.1699
+Engineering,2014,0.1768
+Engineering,2015,0.1802
+Engineering,2016,0.1698
+Engineering,2017,0.169
+Engineering,2018,0.1668
+Engineering,2019,0.15310000000000001
+Engineering,2020,0.15310000000000001
+Engineering,2021,0.1535
+Engineering,2022,0.1312
+Biological,1996,0.0983
+Biological,1997,0.1018
+Biological,1998,0.1046
+Biological,1999,0.1029
+Biological,2000,0.1067
+Biological,2001,0.071
+Biological,2002,0.0709
+Biological,2003,0.1118
+Biological,2004,0.1004
+Biological,2005,0.109
+Biological,2006,0.1066
+Biological,2007,0.1164
+Biological,2008,0.1223
+Biological,2009,0.1172
+Biological,2010,0.12
+Biological,2011,0.1222
+Biological,2012,0.1301
+Biological,2013,0.13
+Biological,2014,0.1361
+Biological,2015,0.1516
+Biological,2016,0.1432
+Biological,2017,0.137
+Biological,2018,0.1249
+Biological,2019,0.138
+Biological,2020,0.1258
+Biological,2021,0.1328
+Biological,2022,0.1285
+Agriculture,1996,0
+Agriculture,1997,0
+Agriculture,1998,0
+Agriculture,1999,0
+Agriculture,2000,0
+Agriculture,2001,0
+Agriculture,2002,0
+Agriculture,2003,0.1223
+Agriculture,2004,0.1118
+Agriculture,2005,0.1087
+Agriculture,2006,0.1101
+Agriculture,2007,0.1263
+Agriculture,2008,0.1341
+Agriculture,2009,0.1278
+Agriculture,2010,0.12
+Agriculture,2011,0.1318
+Agriculture,2012,0.126
+Agriculture,2013,0.1207
+Agriculture,2014,0.135
+Agriculture,2015,0.1353
+Agriculture,2016,0.1192
+Agriculture,2017,0.1244
+Agriculture,2018,0.1219
+Agriculture,2019,0.1156
+Agriculture,2020,0.1158
+Agriculture,2021,0.1039
+Agriculture,2022,0.1039
